@@ -2,7 +2,7 @@ from django.contrib.auth import update_session_auth_hash
 
 from rest_framework import serializers
 
-from api.models import User
+from api.models import User, Quest
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -33,3 +33,17 @@ class UserSerializer(serializers.ModelSerializer):
             update_session_auth_hash(self.context.get('request'), instance)
 
             return instance
+
+
+class QuestSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True, required=False)
+
+    class Meta:
+        model = Quest
+        fields = ('id', 'name', 'timelimit', 'author', 'description',
+                  'photo',)
+        read_only_fields = ('id', 'created_at', 'updated_at')
+
+    def get_validation_exclusions(self, *args, **kwargs):
+        exclusions = super(QuestSerializer, self).get_validation_exclusions()
+        return exclusions + ['author']

@@ -44,6 +44,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
+
     # REQUIRED_FIELDS = ['username']
 
     def __unicode__(self):
@@ -54,5 +55,26 @@ class User(AbstractBaseUser):
 
     def get_short_name(self):
         return self.first_name
+
+
+class Quest(models.Model):
+    name = models.CharField(max_length=40, unique=True)
+    timelimit = models.PositiveIntegerField(default=0)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    description = models.CharField(max_length=1000)
+    photo = models.URLField(blank=True)
+
+    #manager
+    objects = models.Manager()
+
+    # поля - помогатели
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    USERNAME_FIELD = ['name']
+    REQUIRED_FIELDS = ['timelimit']
+
+    def __unicode__(self):
+        return self.name
 
 # Create your models here.

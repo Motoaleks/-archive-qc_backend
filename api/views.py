@@ -3,8 +3,8 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 
 from api.Permissions import IsAccountOwner
-from api.models import User
-from api.serializers import UserSerializer
+from api.models import User, Quest
+from api.serializers import UserSerializer, QuestSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -33,4 +33,36 @@ class UserViewSet(viewsets.ModelViewSet):
             'status': 'Bad request',
             'message': 'Account could not be created with received data.'
         }, status=status.HTTP_400_BAD_REQUEST)
-# Create your views here.
+
+
+class QuestViewSet(viewsets.ModelViewSet):
+    queryset = Quest.objects.all()
+    serializer_class = QuestSerializer
+
+    def get_permissions(self):
+        # return (permissions.AllowAny(), )
+        if self.request.method in permissions.SAFE_METHODS:
+            return (permissions.AllowAny(),)
+
+        if self.request.method == 'POST':
+            return (permissions.IsAuthenticated(),)
+
+        return (permissions.IsAuthenticated(),)
+
+    # def create(self, request):
+    #     serializer = self.serializer_class(data=request.data)
+    #
+    #     if serializer.is_valid():
+    #         Quest.objects.create(**serializer.validated_data)
+    #
+    #         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
+    #
+    #     return Response({
+    #         'status': 'Bad request',
+    #         'message': 'Account could not be created with received data.'
+    #     }, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_create(self, serializer):
+        instance = serializer.save(author=self.request.user)
+
+        return super(QuestViewSet, self).perform_create(serializer)

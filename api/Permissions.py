@@ -6,3 +6,4 @@ class IsAccountOwner(permissions.BasePermission):
         if request.user:
             return account == request.user
         return False
+
