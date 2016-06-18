@@ -44,7 +44,7 @@ class User(AbstractBaseUser):
 
     USERNAME_FIELD = 'username'
 
-    # REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['email']
 
     def __unicode__(self):
         return self.username

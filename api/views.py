@@ -17,7 +17,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return (permissions.AllowAny(),)
 
         if self.request.method == 'POST':
-            return (permissions.AllowAny(),)
+            return (permissions.IsAuthenticated(), )
 
         return (permissions.IsAuthenticated(), IsAccountOwner(),)
 
