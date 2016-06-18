@@ -31,6 +31,7 @@ router.register(r'quests', QuestViewSet)
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     url(r'^', include(router.urls)),
+    url(r'auth/login/', 'rest_framework_jwt.views.obtain_jwt_token')
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
 
