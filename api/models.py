@@ -1,5 +1,6 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 
 class UserManager(BaseUserManager):
@@ -64,15 +65,35 @@ class Quest(models.Model):
     description = models.CharField(max_length=1000)
     photo = models.URLField(blank=True)
 
-    #manager
+    # manager
     objects = models.Manager()
 
-    # поля - помогатели
+    # additional
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = ['name']
     REQUIRED_FIELDS = ['timelimit']
+
+    def __unicode__(self):
+        return self.name
+
+
+class Question(models.Model):
+    photo = models.URLField()
+    text = models.CharField(max_length=300)
+    name = models.CharField(max_length=100)
+    description = models.CharField(max_length=300)
+    latitude = models.FloatField(_('Latitude'))
+    longitude = models.FloatField(_('Longitude'))
+    quest = models.ForeignKey(Quest, related_name='questions')
+
+    # manager
+    objects = models.Manager()
+
+    # additional
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return self.name

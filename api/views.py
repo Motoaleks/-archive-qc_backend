@@ -1,9 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 
 from api.Permissions import IsAccountOwner
-from api.models import User, Quest
+from api.models import User, Quest, Question
 from api.serializers import UserSerializer, QuestSerializer
 
 
@@ -47,22 +47,25 @@ class QuestViewSet(viewsets.ModelViewSet):
         if self.request.method == 'POST':
             return (permissions.IsAuthenticated(),)
 
-        return (permissions.IsAuthenticated(),)
-
-    # def create(self, request):
-    #     serializer = self.serializer_class(data=request.data)
-    #
-    #     if serializer.is_valid():
-    #         Quest.objects.create(**serializer.validated_data)
-    #
-    #         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
-    #
-    #     return Response({
-    #         'status': 'Bad request',
-    #         'message': 'Account could not be created with received data.'
-    #     }, status=status.HTTP_400_BAD_REQUEST)
+        return False
 
     def perform_create(self, serializer):
         instance = serializer.save(author=self.request.user)
 
         return super(QuestViewSet, self).perform_create(serializer)
+
+#
+# class QuestionViewSet(viewsets.ModelViewSet):
+#     # queryset = Question.objects.all()
+#     # serializer_class = QuestSerializer
+#
+#     def get_permissions(self):
+#         if self.request.method == 'POST':
+#             return (permissions.IsAuthenticated(),)
+#
+#         return (permissions.IsAdminUser(),)
+#
+#     # def perform_create(self, serializer):
+#     #     instance = serializer.save(quest = self.request.)
+
+
