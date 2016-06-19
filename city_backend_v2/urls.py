@@ -20,12 +20,13 @@ from django.conf.urls import url, include
 from django.contrib.auth.models import User
 from rest_framework import routers, serializers, viewsets
 
-from api.views import UserViewSet, QuestViewSet, GameViewSet
+from api.views import UserViewSet, QuestViewSet, GameViewSet, FileViewSet
 
 router = routers.DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'quests', QuestViewSet)
 router.register(r'games', GameViewSet)
+router.register(r'files', FileViewSet)
 
 
 # Wire up our API using automatic URL routing.

@@ -1,12 +1,14 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, mixins
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 from api.Permissions import IsAccountOwner
-from api.models import User, Quest, Game, QuestResult, Question
-from api.serializers import UserSerializer, QuestSerializer, GameSerializer, StatusQuestionSerializer
+from api.models import User, Quest, Game, QuestResult, Question, File
+from api.serializers import UserSerializer, QuestSerializer, GameSerializer, StatusQuestionSerializer, FileSerializer
 
 from geopy.distance import vincenty
+
 
 class UserViewSet(viewsets.ModelViewSet):
     # lookup_field = 'username'
@@ -22,7 +24,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return permissions.IsAuthenticated(), IsAccountOwner(),
 
-    def create(self, request):
+    def create(self, request, **kwargs):
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
@@ -111,3 +113,23 @@ class GameViewSet(viewsets.ModelViewSet):
         return Response({'status': 'Bad request',
                          'message': 'Impossible to pass check with such request'
                          }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FileViewSet(mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  mixins.DestroyModelMixin,
+                  GenericViewSet):
+    serializer_class = FileSerializer
+    queryset = File.objects.all()
+
+    def get_permissions(self):
+        return permissions.IsAuthenticated(),
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            f = File.objects.create(**serializer.validated_data)
+            upload = request.data['file']
+            f.file.save(upload.name, upload)
+            return Response(serializer.to_representation(f))
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

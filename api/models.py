@@ -1,5 +1,8 @@
+import os
+
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -56,12 +59,32 @@ class User(AbstractBaseUser):
         return self.first_name
 
 
+def upload_to(instance, filename):
+    return str(instance.id) + os.path.splitext(filename)[1]
+
+
+class File(models.Model):
+
+    file = models.FileField(upload_to=upload_to)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+
+@receiver(models.signals.post_delete, sender=File)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """Deletes file from filesystem
+    when corresponding `MediaFile` object is deleted.
+    """
+    if instance.file:
+        if os.path.isfile(instance.file.path):
+            os.remove(instance.file.path)
+
+
 class Quest(models.Model):
     name = models.CharField(max_length=40, unique=True)
     timelimit = models.PositiveIntegerField(default=0)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     description = models.CharField(max_length=1000)
-    photo = models.URLField(blank=True)
+    photo = models.ForeignKey(File, blank=True)
 
     # manager
     objects = models.Manager()
@@ -78,7 +101,7 @@ class Quest(models.Model):
 
 
 class Question(models.Model):
-    photo = models.URLField()
+    photo = models.ForeignKey(File, blank=True)
     text = models.CharField(max_length=300)
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=300)
@@ -107,3 +130,4 @@ class QuestResult(models.Model):
     question = models.ForeignKey(Question)
     status = models.IntegerField(default=0)
     game = models.ForeignKey(Game, related_name='questions')
+

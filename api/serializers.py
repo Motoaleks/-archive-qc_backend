@@ -3,8 +3,14 @@ from django.contrib.auth import update_session_auth_hash
 
 from rest_framework import serializers
 
-from api.models import User, Quest, Question, Game, QuestResult
+from api.models import User, Quest, Question, Game, QuestResult, File
 
+
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = ('id', 'uploaded_at', 'file')
+        read_only_fields = ('id', 'uploaded_at', 'file')
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
@@ -48,6 +54,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 class QuestSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True, required=False)
     questions = QuestionSerializer(many=True, write_only=True, required=True)
+    photo = serializers.PrimaryKeyRelatedField(required=True, queryset=File.objects.all())
 
     class Meta:
         model = Quest
@@ -57,7 +64,13 @@ class QuestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         questions = validated_data.pop('questions')
-        quest = Quest.objects.create()
+        #file_id = validated_data.pop('photo')
+        print(validated_data)
+        ##validated_data["photo"] = File.objects.get(id=file_id)
+        quest = Quest.objects.create(**validated_data)
+        #photo = File.objects.get(id=file_id)
+        #quest.photo = photo
+        #quest.save()
         for question_data in questions:
             Question.objects.create(quest=quest)
         return quest
@@ -69,6 +82,11 @@ class QuestSerializer(serializers.ModelSerializer):
     def get_validation_exclusions(self, *args, **kwargs):
         exclusions = super(QuestSerializer, self).get_validation_exclusions()
         return exclusions + ['author']
+
+    def to_representation(self, instance):
+        repr = super().to_representation(instance)
+        repr['photo'] = File.objects.get(id=repr['photo']).file.url
+        return repr
 
 
 class StatusQuestionSerializer(serializers.ModelSerializer):
