@@ -96,4 +96,14 @@ class Question(models.Model):
     def __unicode__(self):
         return self.name
 
-# Create your models here.
+
+class Game(models.Model):
+    user = models.ForeignKey(User, related_name='games')
+    quest = models.ForeignKey(Quest)
+    startTime = models.DateTimeField(auto_now_add=True)
+
+
+class QuestResult(models.Model):
+    question = models.ForeignKey(Question)
+    status = models.IntegerField(default=0)
+    game = models.ForeignKey(Game, related_name='questions')

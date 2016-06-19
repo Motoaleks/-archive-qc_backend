@@ -1,8 +1,9 @@
+from datetime import timedelta
 from django.contrib.auth import update_session_auth_hash
 
 from rest_framework import serializers
 
-from api.models import User, Quest, Question
+from api.models import User, Quest, Question, Game, QuestResult
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -11,13 +12,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'created_at', 'updated_at',
+        fields = ('id', 'email', 'username',
                   'first_name', 'last_name', 'password',
                   'confirm_password',)
         read_only_fields = ('created_at', 'updated_at',)
 
         def create(self, validated_data):
-            return User.objects.create(**validated_data)
+            return User.objects.create()
 
         def update(self, instance, validated_data):
             instance.username = validated_data.get('username', instance.username)
@@ -42,16 +43,11 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = ('id', 'photo', 'text', 'name', 'description', 'latitude', 'longitude')
         read_only_fields = ('id', 'created_at', 'updated_at')
-'''
-        def get_validation_exclusions(self, *args, **kwargs):
-        exclusion = super(QuestionSerializer, self).get_validation_exclusion()
-        return exclusion + ['quest']
-'''
 
 
 class QuestSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True, required=False)
-    questions = QuestionSerializer(many=True)
+    questions = QuestionSerializer(many=True, write_only=True, required=True)
 
     class Meta:
         model = Quest
@@ -61,9 +57,9 @@ class QuestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         questions = validated_data.pop('questions')
-        quest = Quest.objects.create(**validated_data)
+        quest = Quest.objects.create()
         for question_data in questions:
-            Question.objects.create(quest=quest, **question_data)
+            Question.objects.create(quest=quest)
         return quest
 
     def update(self, instance, validated_data):
@@ -73,3 +69,44 @@ class QuestSerializer(serializers.ModelSerializer):
     def get_validation_exclusions(self, *args, **kwargs):
         exclusions = super(QuestSerializer, self).get_validation_exclusions()
         return exclusions + ['author']
+
+
+class StatusQuestionSerializer(serializers.ModelSerializer):
+    question = QuestionSerializer(read_only=True)
+
+    class Meta:
+        model = QuestResult
+        fields = ('question',)
+
+    def to_representation(self, instance):
+        base_data = super().to_representation(instance)
+        result = {"status": instance.status, "id": base_data["question"]["id"]}
+        if instance.status == 0:
+            result["text"] = base_data["question"]["text"]
+            result["photo"] = base_data["question"]["photo"]
+        elif instance.status > 0:
+            result["name"] = base_data["question"]["name"]
+            result["longitude"] = base_data["question"]["longitude"]
+            result["latitude"] = base_data["question"]["latitude"]
+        if instance.status == 2:
+            result["description"] = base_data["question"]["description"]
+        return result
+
+
+class GameSerializer(serializers.ModelSerializer):
+    questions = StatusQuestionSerializer(many=True)
+    quest = QuestSerializer()
+
+    class Meta:
+        model = Game
+        fields = ('questions', 'quest')
+
+    def to_representation(self, instance):
+        base_rep = super().to_representation(instance)
+        name = base_rep["quest"]["name"]
+        endtime = instance.startTime + timedelta(seconds=base_rep["quest"]["timelimit"])
+        return {"name": name, "endtime": endtime, "questions": base_rep["questions"]}
+
+    def update(self, instance, validated_data):
+        pass
+
