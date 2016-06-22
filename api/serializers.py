@@ -12,6 +12,7 @@ class FileSerializer(serializers.ModelSerializer):
         fields = ('id', 'uploaded_at', 'file')
         read_only_fields = ('id', 'uploaded_at', 'file')
 
+
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     confirm_password = serializers.CharField(write_only=True, required=False)
